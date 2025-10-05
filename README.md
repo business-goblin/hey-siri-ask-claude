@@ -1,162 +1,117 @@
 # Hey Siri, Ask Claude
 
-A Siri-triggered voice conversation launcher for Claude Desktop on macOS. Start talking to Claude with just your voice—perfect for Mac Mini + AirPods setups.
+Siri-triggered voice conversations with Claude Desktop using [voice-mode MCP](https://github.com/eddieoz/voice-mode).
 
-## Overview
+Say "Hey Siri, ask Claude" and instantly start a hands-free voice conversation with Claude on macOS.
 
-This project enables hands-free Claude Desktop voice conversations through Siri:
+## What is voice-mode?
 
-1. **Say**: "Hey Siri, talk to Claude" (to your AirPods/Mac)
-2. **Script runs**: Opens Claude Desktop and types the conversation starter
-3. **Voice chat begins**: Audio routes through your AirPods automatically
+[voice-mode](https://github.com/eddieoz/voice-mode) is a Model Context Protocol (MCP) server that adds real-time voice conversation capabilities to Claude Desktop and Claude Code. It handles:
+
+- Speech-to-text (Whisper via OpenAI API)
+- Text-to-speech (OpenAI TTS)
+- Automatic conversation flow
+- Audio device management
+
+This project simply adds Siri integration to trigger voice-mode conversations hands-free.
 
 ## Requirements
 
-- macOS (tested on Mac Mini)
+- macOS
 - [Claude Desktop](https://claude.ai/download)
-- AirPods (or other Bluetooth audio device)
-- Siri enabled on your Mac
-- OpenAI API key (for voice services)
-- `uvx` installed (comes with [`uv`](https://docs.astral.sh/uv/getting-started/installation/))
+- OpenAI API key
+- `uvx` installed ([uv installation](https://docs.astral.sh/uv/getting-started/installation/))
+- Siri enabled
 
 ## Installation
 
-### Step 1: Configure Claude Desktop
+### 1. Configure voice-mode in Claude Desktop
 
-First, set up voice-mode MCP in Claude Desktop:
+See [CLAUDE_DESKTOP_SETUP.md](CLAUDE_DESKTOP_SETUP.md) for detailed instructions.
 
-Follow the detailed instructions in [CLAUDE_DESKTOP_SETUP.md](CLAUDE_DESKTOP_SETUP.md)
+**Quick version:**
+```bash
+# Create config file
+cat > ~/Library/Application\ Support/Claude/claude_desktop_config.json << 'EOF'
+{
+  "mcpServers": {
+    "voicemode": {
+      "command": "/Users/YOUR_USERNAME/.local/bin/uvx",
+      "args": ["voice-mode"],
+      "env": {
+        "OPENAI_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+EOF
+```
 
-Quick summary:
-1. Get an OpenAI API key
-2. Create `~/Library/Application Support/Claude/claude_desktop_config.json`
-3. Add voice-mode MCP configuration
-4. Restart Claude Desktop
+Replace `YOUR_USERNAME` and `your-api-key-here` with your values, then restart Claude Desktop.
 
-### Step 2: Install the Script
+### 2. Install the script
 
-1. Clone or download this repository
-2. Run the installation script:
-   ```bash
-   ./install.sh
-   ```
-3. Grant Accessibility permissions when prompted
+```bash
+git clone https://github.com/business-goblin/hey-siri-ask-claude.git
+cd hey-siri-ask-claude
+./install.sh
+```
 
-### Step 3: Create Siri Shortcut
+Grant Accessibility permissions when prompted (**System Settings** → **Privacy & Security** → **Accessibility**).
 
-Follow the [Shortcuts Setup Guide](SHORTCUTS_SETUP.md) to create the Siri shortcut
+### 3. Create Siri Shortcut
 
-### Manual Install
+1. Open **Shortcuts** app
+2. Create new shortcut → Add **"Run Shell Script"** action
+3. Enter: `~/scripts/start-claude-voice.sh`
+4. Name it: **Ask Claude**
+5. Done!
 
-1. Copy `start-claude-voice.sh` to `~/scripts/`:
-   ```bash
-   mkdir -p ~/scripts
-   cp start-claude-voice.sh ~/scripts/
-   chmod +x ~/scripts/start-claude-voice.sh
-   ```
-
-2. Follow the [Shortcuts Setup Guide](SHORTCUTS_SETUP.md)
-
-## Setup
-
-See [SHORTCUTS_SETUP.md](SHORTCUTS_SETUP.md) for detailed instructions on:
-- Creating the Shortcuts app automation
-- Configuring Siri permissions
-- Troubleshooting common issues
+See [SHORTCUTS_SETUP.md](SHORTCUTS_SETUP.md) for detailed steps and troubleshooting.
 
 ## Usage
-
-Once installed and configured:
 
 ```
 "Hey Siri, ask Claude"
 ```
 
-Claude Desktop will open and immediately start a voice conversation with audio through your AirPods.
+Claude Desktop opens and voice-mode starts automatically. Audio uses your current system output device.
 
 ## How It Works
 
-1. **Siri** hears your command and triggers the Mac Shortcut
-2. **Shortcut** runs `~/scripts/start-claude-voice.sh`
-3. **Script** uses AppleScript to:
-   - Launch Claude Desktop (if not running)
-   - Activate the Claude window
-   - Type "Let's have a voice conversation"
-   - Press Enter to send the message
-4. **Claude** receives the message and starts voice mode
-5. **Audio** routes through your connected AirPods
+1. Siri triggers Mac Shortcut
+2. AppleScript launches Claude Desktop
+3. Script types "Let's have a voice conversation" and presses Enter
+4. voice-mode MCP handles the conversation
+5. Speak naturally, Claude responds via TTS
 
 ## Customization
 
-### Change the Siri phrase
+**Change Siri phrase:** Rename the shortcut in Shortcuts app
 
-Rename the shortcut in the Shortcuts app to any phrase you prefer:
-- "Start Claude"
-- "Voice Assistant"
-- "AI Chat"
-
-### Change the conversation starter
-
-Edit `start-claude-voice.sh` at line 25:
+**Change conversation trigger:** Edit line 25 in `start-claude-voice.sh`:
 ```bash
 keystroke "Let's have a voice conversation"
 ```
 
-Replace with any text you want to send to Claude.
-
-### Adjust timing
-
-If Claude doesn't respond reliably, increase the delay values in the script:
-```bash
-sleep 3      # Wait after launching Claude (line 11)
-delay 0.5    # Wait before typing (line 18)
-delay 0.2    # Wait before pressing Enter (line 22)
-```
+**Adjust timing:** Increase delays in script if needed (lines 11, 20, 26)
 
 ## Troubleshooting
 
-### Script doesn't execute
-- Verify permissions: `ls -la ~/scripts/start-claude-voice.sh`
-- Should show `-rwxr-xr-x`
-- Re-run: `chmod +x ~/scripts/start-claude-voice.sh`
+**Voice-mode not working?** Check Claude Desktop Settings → Developer → MCP Servers for "voicemode"
 
-### Claude opens but doesn't start conversation
-- Grant Accessibility permissions to **Shortcuts** and **Claude**
-- Go to **System Settings** → **Privacy & Security** → **Accessibility**
-- Increase delay values in the script
+**Script doesn't run?** Grant Accessibility permissions to Shortcuts and Terminal
 
-### Siri doesn't recognize the command
-- Check that "Listen for 'Hey Siri'" is enabled in **System Settings**
-- Try a simpler shortcut name
-- Speak clearly and naturally
+**Siri doesn't recognize command?** Try renaming shortcut to something simpler like "Claude"
 
-### Audio doesn't route to AirPods
-- Ensure AirPods are connected before triggering
-- Check macOS sound output settings
-- Test Claude voice mode manually first
+See [SHORTCUTS_SETUP.md](SHORTCUTS_SETUP.md) for more troubleshooting.
 
-## Project Structure
+## About voice-mode
 
-```
-hey-siri-ask-claude/
-├── README.md                  # This file
-├── SHORTCUTS_SETUP.md         # Detailed Shortcuts app configuration
-├── start-claude-voice.sh      # Main launcher script
-└── install.sh                 # Installation helper
-```
+This project is a Siri launcher for [voice-mode](https://github.com/eddieoz/voice-mode), an excellent MCP server for voice conversations with Claude. voice-mode handles all the heavy lifting—speech recognition, synthesis, and conversation management. This repo just adds the convenience of Siri activation.
 
-## Contributing
-
-Contributions welcome! Feel free to:
-- Report bugs
-- Suggest features
-- Submit pull requests
-- Share your customizations
+For more voice-mode features and configuration options, check out the [voice-mode documentation](https://github.com/eddieoz/voice-mode).
 
 ## License
 
-MIT License - feel free to use and modify as needed.
-
-## Credits
-
-Created for seamless voice interactions with Claude Desktop on Mac Mini + AirPods setups.
+MIT
